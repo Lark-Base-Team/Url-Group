@@ -40,11 +40,30 @@ export function GridViewer(props: {
         if (props.config.table == null) {
             return
         }
-        let recordList = await (await bitable.base.getTableById(props.config.table!)).getRecordList()
-        for (const record of recordList) {
-            const title_cell = await record.getCellByField(props.config.titleRow!)
+        let table = await bitable.base.getTableById(props.config.table!)
+        let recordList = await (async (table: any) => {
+            let recordIdData;
+            let token = undefined as any;
+            // setLoading(true);
+            const recordIdList = []
+            do {
+                recordIdData = await table.getRecordListByPage(token ? { pageToken: token, pageSize: 200 } : { pageSize: 200 });
+                
+                token = recordIdData.pageToken;
+                
+                // setLoadingTip(`${((token > 200 ? (token - 200) : 0) / recordIdData.total * 100).toFixed(2)}%`)
+                recordIdList.push(...recordIdData.records.recordList)
+        
+            } while (recordIdData.hasMore);
+            // setLoading(false);
+            return recordIdList
+        })(table);
+        for (let record of recordList) {
+            console.log(record);
+            
+            const title_cell = await (await table.getFieldById(props.config.titleRow!)).getCell(record.recordId)
             const title = await title_cell.getValue();
-            const icon_cell = await record.getCellByField(props.config.iconRow!)
+            const icon_cell = await (await table.getFieldById(props.config.iconRow!)).getCell(record.recordId)
             let icon_field = await (
                 await bitable.base.getTableById(props.config.table!)
             ).getFieldById(props.config.iconRow!)
@@ -56,7 +75,7 @@ export function GridViewer(props: {
             }]
             if (icon_type == FieldType.Attachment) {
                 try {
-                    let urls = await (icon_field as IAttachmentField).getAttachmentUrls(record.id)
+                    let urls = await (icon_field as IAttachmentField).getAttachmentUrls(record.recordId)
                     icon = [{
                         text: urls[0]
                     }]
@@ -71,7 +90,7 @@ export function GridViewer(props: {
             if (!Array.isArray(icon) && !Array.isArray(title)) {
                 continue
             }
-            const link_cell = await record.getCellByField(props.config.linkRow!)
+            const link_cell = await (await table.getFieldById(props.config.linkRow!)).getCell(record.recordId)
             let link_field = await (
                 await bitable.base.getTableById(props.config.table!)
             ).getFieldById(props.config.linkRow!)
@@ -83,7 +102,7 @@ export function GridViewer(props: {
             }]
             if (link_type == FieldType.Attachment) {
                 try {
-                    let urls = await (link_field as IAttachmentField).getAttachmentUrls(record.id)
+                    let urls = await (link_field as IAttachmentField).getAttachmentUrls(record.recordId)
                     link = [{
                         text: urls[0]
                     }]
