@@ -1,5 +1,5 @@
-import { DashboardState, bitable, dashboard } from "@lark-base-open/js-sdk";
-import React from "react";
+import { DashboardState, dashboard } from "@lark-base-open/js-sdk";
+import React, { useState } from "react";
 import { useLayoutEffect } from "react";
 
 function updateTheme(theme: string) {
@@ -8,15 +8,23 @@ function updateTheme(theme: string) {
 
 /** 跟随主题色变化 */
 export function useTheme() {
+  const [bgColor, setBgColor] = useState('#ffffff');
   useLayoutEffect(() => {
-    bitable.bridge.getTheme().then((theme: string) => {
-      updateTheme(theme.toLocaleLowerCase())
+    dashboard.getTheme().then((res) => {
+      console.log(res)
+      setBgColor(res.chartBgColor);
+      updateTheme(res.theme.toLocaleLowerCase());
     })
 
-    bitable.bridge.onThemeChange((e) => {
-      updateTheme(e.data.theme.toLocaleLowerCase())
+    dashboard.onThemeChange((res) => {
+      setBgColor(res.data.chartBgColor);
+      updateTheme(res.data.theme.toLocaleLowerCase());
     })
-  }, [])
+  }, []);
+
+  return {
+    bgColor
+  }
 }
 
 /** 初始化、更新config */

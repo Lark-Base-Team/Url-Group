@@ -1,6 +1,5 @@
 @import "reset-css";
 
-
 body[theme-mode="light"] {
     --bg-body: #fff;
     --divider: rgba(31, 35, 41, 0.15);
@@ -275,6 +274,12 @@ body[theme-mode="dark"] {
     --ccm-chart-I700: #9ea5ff;
     --ccm-chart-I800: #bbc0f6;
     --ccm-chart-I900: #d2d5fd;
+}
+
+::-webkit-scrollbar {
+    height: 0;
+    width: 0;
+    color: transparent;
 }
 
 html,

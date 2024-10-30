@@ -23,9 +23,12 @@ interface IUrlGroupConfig {
   linkRow: string | null
 }
 
+interface UrlGroupProps {
+  bgColor: string,
+}
 
-
-export default function UrlGroup() {
+export default function UrlGroup(props: UrlGroupProps) {
+  const { bgColor } = props;
 
   const { t, i18n } = useTranslation();
 
@@ -93,10 +96,7 @@ export default function UrlGroup() {
   }, [document.body.getAttribute('theme-mode')])
 
   return (
-    <main className={classnames({
-      'main-config': isConfig,
-      'main': true,
-    })}>
+    <main className={classnames({ 'main-config': isConfig, 'main': true,})} style={{backgroundColor: bgColor}}>
       <div className='content' style={light ? {} : {
         scrollbarColor: "#333 #222"
       }}>
@@ -141,6 +141,7 @@ function ConfigPanel(props: {
           </div>
         }>
           <IconSelect
+          
             onChange={(e: 'grid' | 'row') => {
               setConfig({
                 ...config,
