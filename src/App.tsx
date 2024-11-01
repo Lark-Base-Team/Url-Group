@@ -7,6 +7,6 @@ import { useTheme } from './hooks';
 
 
 export default function App() {
-  const { bgColor} = useTheme();
-  return <UrlGroup bgColor={bgColor} />
+  const { bgColor, light } = useTheme();
+  return <UrlGroup bgColor={bgColor} light={light} />
 }

@@ -1,9 +1,9 @@
-import { bitable } from "@lark-base-open/js-sdk"
+import { dashboard } from "@lark-base-open/js-sdk"
 import "./selector.scss"
 
 let isDark = false
-bitable.bridge.getTheme().then((theme: string) => {
-  isDark = theme.toLocaleLowerCase() == 'dark'
+dashboard.getTheme().then((res) => {
+  isDark = res.theme.toLocaleLowerCase() == 'dark'
 })
 
 export function IconSelect({ optionList, onChange, value }: any) {

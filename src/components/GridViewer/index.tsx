@@ -22,19 +22,16 @@ export function GridViewer(props: {
     trans: TFunction<"translation", undefined>
 }) {
     let [data, setData] = useState<IViewerData[]>([])
-    let [light, setIsLight] = useState(document.body.getAttribute('theme-mode') != 'dark')
+    const [light, setIsLight] = useState(true);
     useEffect(() => {
-        let theme = document.body.getAttribute('theme-mode')
-        if (theme == 'dark') {
-            setIsLight(false)
-        }
-        else {
-            setIsLight(true)
-        }
-        bitable.bridge.onThemeChange((e) => {
-            setIsLight(e.data.theme.toLocaleLowerCase() != 'dark')
+        dashboard.getTheme().then((res) => {
+            setIsLight(res.theme.toLocaleLowerCase() === 'light');
         })
-    }, [document.body.getAttribute('theme-mode')])
+      
+        dashboard.onThemeChange((res) => {
+            setIsLight(res.data.theme.toLocaleLowerCase() === 'light');
+        })
+    }, [])
     async function fetchData() {
         let data: IViewerData[] = []
         if (props.config.table == null) {

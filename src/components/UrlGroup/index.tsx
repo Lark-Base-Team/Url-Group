@@ -25,10 +25,11 @@ interface IUrlGroupConfig {
 
 interface UrlGroupProps {
   bgColor: string,
+  light: boolean,
 }
 
 export default function UrlGroup(props: UrlGroupProps) {
-  const { bgColor } = props;
+  const { bgColor, light } = props;
 
   const { t, i18n } = useTranslation();
 
@@ -81,20 +82,6 @@ export default function UrlGroup(props: UrlGroupProps) {
 
   useConfig(updateConfig)
 
-  let [light, setIsLight] = useState(document.body.getAttribute('theme-mode') != 'dark')
-  useEffect(() => {
-    let theme = document.body.getAttribute('theme-mode')
-    if (theme == 'dark') {
-      setIsLight(false)
-    }
-    else {
-      setIsLight(true)
-    }
-    bitable.bridge.onThemeChange((e) => {
-      setIsLight(e.data.theme.toLocaleLowerCase() != 'dark')
-    })
-  }, [document.body.getAttribute('theme-mode')])
-
   return (
     <main className={classnames({ 'main-config': isConfig, 'main': true,})} style={{backgroundColor: bgColor}}>
       <div className='content' style={light ? {} : {
@@ -141,7 +128,7 @@ function ConfigPanel(props: {
           </div>
         }>
           <IconSelect
-          
+
             onChange={(e: 'grid' | 'row') => {
               setConfig({
                 ...config,

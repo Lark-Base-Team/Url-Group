@@ -9,21 +9,25 @@ function updateTheme(theme: string) {
 /** 跟随主题色变化 */
 export function useTheme() {
   const [bgColor, setBgColor] = useState('#ffffff');
+  const [light, setIsLight] = useState(true);
+  
   useLayoutEffect(() => {
     dashboard.getTheme().then((res) => {
-      console.log(res)
+      setIsLight(res.theme.toLocaleLowerCase() === 'light');
       setBgColor(res.chartBgColor);
       updateTheme(res.theme.toLocaleLowerCase());
     })
 
     dashboard.onThemeChange((res) => {
+      setIsLight(res.data.theme.toLocaleLowerCase() === 'light');
       setBgColor(res.data.chartBgColor);
       updateTheme(res.data.theme.toLocaleLowerCase());
     })
   }, []);
 
   return {
-    bgColor
+    bgColor,
+    light,
   }
 }
 
