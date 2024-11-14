@@ -1,6 +1,6 @@
-import { Avatar, Button, ButtonGroup, List, Skeleton } from "@douyinfe/semi-ui";
+import { Avatar, Button, List, Skeleton } from "@douyinfe/semi-ui";
 import { useEffect, useState } from "react";
-import { base, dashboard, bitable, FieldType, IField, IOpenAttachment, IAttachmentField } from '@lark-base-open/js-sdk';
+import { dashboard, bitable, FieldType, IAttachmentField } from '@lark-base-open/js-sdk';
 import { toMinText, toNormalText } from "../../utils";
 import './row.scss'
 import { TFunction } from "i18next";
@@ -21,8 +21,8 @@ export function RowViewer(props: {
     config: IUrlGroupConfig,
     trans: TFunction<"translation", undefined>
 }) {
-    let [data, setData] = useState<IViewerData[]>([])
-    let [light, setIsLight] = useState(true)
+    const [data, setData] = useState<IViewerData[]>([])
+    const [light, setIsLight] = useState(true)
     useEffect(() => {
         dashboard.getTheme().then((res) => {
             setIsLight(res.theme.toLocaleLowerCase() === 'light');
@@ -33,81 +33,53 @@ export function RowViewer(props: {
         })
     }, [])
     async function fetchData() {
-        let data: IViewerData[] = []
+        const data: IViewerData[] = []
         if(props.config.table == null){
             return
         }
         const table = await bitable.base.getTableById(props.config.table!)
-        let recordList = await (async (table: any) => {
-            let recordIdData;
-            let token = undefined as any;
-            // setLoading(true);
-            const recordIdList = []
-            do {
-                recordIdData = await table.getRecordListByPage(token ? { pageToken: token, pageSize: 200 } : { pageSize: 200 });
-                token = recordIdData.pageToken;
-                // setLoadingTip(`${((token > 200 ? (token - 200) : 0) / recordIdData.total * 100).toFixed(2)}%`)
-                recordIdList.push(...recordIdData.records.recordList)
-        
-            } while (recordIdData.hasMore);
-            // setLoading(false);
-            return recordIdList
-        })(table)
-        console.log(recordList);
-        
-        for (const record of recordList) {
-            
-            const title_cell = await (await table.getFieldById(props.config.titleRow!)).getCell(record.recordId)
-            const title = await title_cell.getValue();
-            const icon_cell = await (await table.getFieldById(props.config.iconRow!)).getCell(record.recordId)
-            let icon_field = await (
-                await bitable.base.getTableById(props.config.table!)
-            ).getFieldById(props.config.iconRow!)
-            let icon_type = await (
-                icon_field
-            ).getType()
-            let icon = [{
-                text: ""
-            }]
-            if (icon_type == FieldType.Attachment){
+        const view = await table.getViewById(props.config.view!);
+        const recordIdList = await view.getVisibleRecordIdList();
+        for (const recordId of recordIdList) {
+            if(!recordId){
+                continue
+            }
+            const titleField = await table.getFieldById(props.config.titleRow!)
+            const titleCell = await titleField.getCell(recordId)
+            const title = await titleCell.getValue();
+            const iconField = await table.getFieldById(props.config.iconRow!)
+            const iconCell = await iconField.getCell(recordId)
+            const iconType = await iconField.getType()
+            let icon = [{text: ""}]
+            if (iconType == FieldType.Attachment){
                 try {
-                    let urls = await (icon_field as IAttachmentField).getAttachmentUrls(record.recordId)
-                    icon = [{
-                        text: urls[0]
-                    }]
+                    const urls = await (iconField as IAttachmentField).getAttachmentUrls(recordId)
+                    icon = [{ text: urls[0]}]
                 } catch (e) {
                     console.warn("Failed to fetch icon")
                 }
             }
             else{
-                icon = await icon_cell.getValue();
+                icon = await iconCell.getValue();
             }
             
             if (!Array.isArray(icon) && !Array.isArray(title)){
                 continue
             }
-            const link_cell = await (await table.getFieldById(props.config.linkRow!)).getCell(record.recordId)
-            let link_field = await (
-                await bitable.base.getTableById(props.config.table!)
-            ).getFieldById(props.config.linkRow!)
-            let link_type = await (
-                link_field
-            ).getType()
-            let link = [{
-                text: ""
-            }]
-            if(link_type == FieldType.Attachment){
+            const linkField = await table.getFieldById(props.config.linkRow!)
+            const linkCell = await linkField.getCell(recordId)
+            const linkType = await linkField.getType()
+            let link = [{text: ""}]
+            if(linkType == FieldType.Attachment){
                 try {
-                    let urls = await (link_field as IAttachmentField).getAttachmentUrls(record.recordId)
-                    link = [{
-                        text: urls[0]
-                    }]
+                    const urls = await (linkField as IAttachmentField).getAttachmentUrls(recordId)
+                    link = [{text: urls[0]}]
                 } catch (e) {
                     console.warn("Failed to fetch link")
                 }
             }
             else{
-                link = await link_cell.getValue();
+                link = await linkCell.getValue();
             }
             data.push({
                 text: toNormalText(title),
@@ -118,11 +90,7 @@ export function RowViewer(props: {
         setData(data)
     }
     useEffect(() => {
-
-
         fetchData();
-
-
     }, [props]); // 空依赖数组意味着这个effect只会在组件挂载后运行一次
     useEffect(() => {
         const update = dashboard.onConfigChange(() => {
