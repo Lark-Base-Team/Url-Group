@@ -1,6 +1,6 @@
 import { Avatar, Button, List, Skeleton } from "@douyinfe/semi-ui";
 import { useEffect, useState } from "react";
-import { dashboard, bitable, FieldType, IAttachmentField } from '@lark-base-open/js-sdk';
+import { dashboard as dashboardSdk, bitable as bitableSdk, FieldType, IAttachmentField } from '@lark-base-open/js-sdk';
 import { toMinText, toNormalText } from "../../utils";
 import './row.scss'
 import { TFunction } from "i18next";
@@ -19,8 +19,12 @@ interface IViewerData {
 }
 export function RowViewer(props: {
     config: IUrlGroupConfig,
-    trans: TFunction<"translation", undefined>
+    trans: TFunction<"translation", undefined>,
+    dashboard: typeof dashboardSdk,
+    bitable: typeof bitableSdk | null,
 }) {
+    const { dashboard, bitable } = props;
+
     const [data, setData] = useState<IViewerData[]>([])
     const [light, setIsLight] = useState(true)
     useEffect(() => {
@@ -31,10 +35,10 @@ export function RowViewer(props: {
         dashboard.onThemeChange((res) => {
             setIsLight(res.data.theme.toLocaleLowerCase() === 'light');
         })
-    }, [])
+    }, [dashboard])
     async function fetchData() {
         const data: IViewerData[] = []
-        if(props.config.table == null){
+        if(props.config.table == null || bitable == null){
             return
         }
         const table = await bitable.base.getTableById(props.config.table!)
@@ -99,7 +103,7 @@ export function RowViewer(props: {
         return () => {
             update();
         }
-    }, []);
+    }, [dashboard]);
     const placeholder = (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', rowGap: '30px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyItems: 'center', columnGap: '30px' }}>
