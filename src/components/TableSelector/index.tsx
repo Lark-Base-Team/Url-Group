@@ -15,7 +15,6 @@ export function TableSelector(props: TableSelectorProps) {
 
     const [optionList, setOptionList] = useState<OptionProps[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const hasInit = useRef(false);
 
     let { t } = useTranslation();
     useEffect(() => {
@@ -24,11 +23,6 @@ export function TableSelector(props: TableSelectorProps) {
                 return;
             }
             setLoading(true);
-            if (hasInit.current) {
-                onChange('');
-                setSection('');
-                setOptionList([]);
-            }
             const tableList = (await bitable.base?.getTableMetaList()) || [];
             const options = tableList.map(async (table) => {
                 const name = table.name;
@@ -39,7 +33,6 @@ export function TableSelector(props: TableSelectorProps) {
             const resolvedOptions = await Promise.all(options);
             setOptionList(resolvedOptions);
             setLoading(false);
-            hasInit.current = true;
         }
 
         fetchTableData();

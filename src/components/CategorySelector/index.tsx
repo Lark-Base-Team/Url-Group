@@ -18,17 +18,11 @@ export function CategorySelector(props: CategorySelectorProps) {
     const [loading, setLoading] = useState<boolean>(false);
 
     let { t } = useTranslation();
-    const hasInit = useRef(false);
     let { onChange, defaultSection, bitable, tableId, viewId, availableFieldTypes } = props;
     useEffect(() => {
         async function fetchCategoryData() {
             if (tableId == null || viewId == null || !bitable) return;
             setLoading(true);
-            if (hasInit.current) {
-                onChange('');
-                setSection('');
-                setOptionList([]);
-            }
             const categoryList = await (await (await bitable.base?.getTableById(tableId))?.getViewById(viewId))?.getFieldMetaList() || [];
             const options = categoryList.map(async (category) => {
                 const name = category.name;
@@ -42,7 +36,6 @@ export function CategorySelector(props: CategorySelectorProps) {
             // 等待所有getName调用完成
             const resolvedOptions = await Promise.all(options);
             setOptionList(resolvedOptions);
-            hasInit.current = true;
             setLoading(false);
         }
 

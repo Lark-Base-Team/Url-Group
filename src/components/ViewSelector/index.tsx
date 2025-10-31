@@ -16,7 +16,6 @@ export function ViewSelector(props: ViewSelectorProps) {
     const [loading, setLoading] = useState<boolean>(false);
 
     let { t } = useTranslation();
-    const hasInit = useRef(false);
     let { onChange, defaultSection, bitable, tableId } = props;
     useEffect(() => {
         async function fetchViewData() {
@@ -24,11 +23,6 @@ export function ViewSelector(props: ViewSelectorProps) {
                 return;
             }
             setLoading(true);
-           if (hasInit.current) {
-                onChange('');
-                setSection('');
-                setOptionList([]);
-            }
             const viewList = await (await bitable.base?.getTableById(tableId))?.getViewList() || [];
             const options = viewList.map(async (view) => {
                 const name = await view.getName();
@@ -38,7 +32,6 @@ export function ViewSelector(props: ViewSelectorProps) {
             // 等待所有getName调用完成
             const resolvedOptions = await Promise.all(options);
             setOptionList(resolvedOptions);
-            hasInit.current = true;
             setLoading(false);
         }
 

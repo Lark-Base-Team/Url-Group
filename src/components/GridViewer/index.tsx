@@ -38,7 +38,7 @@ export function GridViewer(props: {
     }, [dashboard])
     async function fetchData() {
         const data: IViewerData[] = []
-        if (props.config.table == null || bitable == null) {
+        if (props.config.table == null || !bitable) {
             return
         }
         const table = await bitable.base.getTableById(props.config.table!)

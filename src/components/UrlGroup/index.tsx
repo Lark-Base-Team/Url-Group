@@ -230,6 +230,11 @@ function ConfigPanel(props: {
                 setConfig({
                   ...config,
                   baseToken: v,
+                  table: null,
+                  view: null,
+                  titleRow: null,
+                  iconRow: null,
+                  linkRow: null,
                 })
               }
             />
@@ -244,7 +249,11 @@ function ConfigPanel(props: {
             onChange={(e) => {
               setConfig({
                 ...config,
-                table: e
+                table: e,
+                view: null,
+                titleRow: null,
+                iconRow: null,
+                linkRow: null,
               })
             }}
             defaultSection={config.table}
@@ -260,7 +269,10 @@ function ConfigPanel(props: {
             onChange={(e) => {
               setConfig({
                 ...config,
-                view: e
+                view: e,
+                titleRow: null,
+                iconRow: null,
+                linkRow: null,
               })
             }}
             defaultSection={config.view}
