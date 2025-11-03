@@ -1,6 +1,6 @@
 import './style.scss';
 import React from 'react';
-import { bitable, dashboard, DashboardState, FieldType, IConfig } from "@lark-base-open/js-sdk";
+import { bitable as bitableSdk, bridge, dashboard as dashboardSdk, DashboardState, FieldType, IConfig, IDashboard, workspace } from "@lark-base-open/js-sdk";
 import { Button } from '@douyinfe/semi-ui';
 import { useState, useEffect, useRef } from 'react';
 import { useConfig } from '../../hooks';
@@ -14,6 +14,7 @@ import { ViewSelector } from '../ViewSelector';
 import { CategorySelector } from '../CategorySelector';
 import { RowViewer } from '../RowViewer';
 import { GridViewer } from '../GridViewer';
+import BaseSelector from '../BaseSelector';
 interface IUrlGroupConfig {
   type: 'grid' | 'row',
   table: string | null,
@@ -21,6 +22,7 @@ interface IUrlGroupConfig {
   titleRow: string | null,
   iconRow: string | null,
   linkRow: string | null
+  baseToken: string | undefined
 }
 
 interface UrlGroupProps {
@@ -40,24 +42,85 @@ export default function UrlGroup(props: UrlGroupProps) {
     view: null,
     titleRow: null,
     iconRow: null,
-    linkRow: null
+    linkRow: null,
+    baseToken: undefined
   })
-
+  const [isMultipleBase, setIsMultipleBase] = useState<boolean | undefined>(
+    undefined
+  );
+  const [bitable, setBitable] = useState<typeof bitableSdk | null>(bitableSdk);
+  const [dashboard, setDashboard] = useState<IDashboard>(dashboardSdk);
 
   const isCreate = dashboard.state === DashboardState.Create
 
+   useEffect(() => {
+    (async () => {
+      const env = await bridge.getEnv();
+      setIsMultipleBase(env.needChangeBase ?? false);
+    })();
+  }, []);
+
   useEffect(() => {
-    if (isCreate) {
+    (async () => {
+      if (!isMultipleBase) {
+        return;
+      }
+      const workspaceBitable = await workspace.getBitable(
+        config.baseToken!
+      );
+      const workspaceDashboard = workspaceBitable?.dashboard || dashboard;
+     setDashboard(workspaceDashboard);
+    })();
+  }, [config.baseToken, isMultipleBase]);
+
+  const getBaseToken = async () => {
+    if (config?.baseToken) {
+      return;
+    }
+    const baseList = await workspace.getBaseList({
+      query: "",
+      page: {
+        cursor: "",
+      },
+    });
+    const initialBaseToken = baseList?.base_list?.[0]?.token || "";
+    setConfig({
+      ...config,
+      baseToken: initialBaseToken,
+    });
+  };
+
+  useEffect(() => {
+     (async () => {
+      if (isCreate) {
       setConfig({
         type: 'grid',
         table: null,
         view: null,
         titleRow: null,
         iconRow: null,
-        linkRow: null
+        linkRow: null,
+        baseToken: undefined
       })
+      if (isMultipleBase) {
+        getBaseToken();
+      }
     }
-  }, [i18n.language, isCreate])
+    })();
+  }, [i18n.language, isCreate, isMultipleBase])
+
+  useEffect(() => {
+    (async () => {
+      if (isMultipleBase && !config.baseToken) {
+        setBitable(null);
+        return;
+      }
+      const realBitable = isMultipleBase
+        ? await workspace.getBitable(config.baseToken!)
+        : bitableSdk;
+      setBitable(realBitable);
+    })();
+  }, [config.baseToken, isMultipleBase]);
 
   /** 是否配置/创建模式下 */
   const isConfig = dashboard.state === DashboardState.Config || isCreate;
@@ -89,13 +152,13 @@ export default function UrlGroup(props: UrlGroupProps) {
       }}>
         {
           config.type == "row" ?
-            <RowViewer config={config} trans={t} />
+            <RowViewer config={config} trans={t} dashboard={dashboard} bitable={bitable} />
             :
-            <GridViewer config={config} trans={t} />
+            <GridViewer config={config} trans={t} dashboard={dashboard} bitable={bitable} />
         }
       </div>
       {
-        isConfig && <ConfigPanel t={t} config={config} setConfig={setConfig} />
+        isConfig && <ConfigPanel t={t} config={config} setConfig={setConfig} dashboard={dashboard} bitable={bitable} isMultipleBase={isMultipleBase} />
       }
     </main>
   )
@@ -107,14 +170,22 @@ function ConfigPanel(props: {
   config: IUrlGroupConfig,
   setConfig: React.Dispatch<React.SetStateAction<IUrlGroupConfig>>,
   t: TFunction<"translation", undefined>,
+  dashboard: IDashboard,
+  bitable: typeof bitableSdk | null,
+  isMultipleBase?: boolean,
 }) {
-  const { config, setConfig, t } = props;
+  const { config, setConfig, t, isMultipleBase, dashboard, bitable } = props;
 
   /**保存配置 */
   const onSaveConfig = () => {
     dashboard.saveConfig({
       customConfig: config,
-      dataConditions: [],
+      dataConditions: [
+         {
+          tableId: config.table,
+          baseToken: config.baseToken,
+        }
+      ],
     } as any)
   }
 
@@ -152,6 +223,28 @@ function ConfigPanel(props: {
             value={config.type}
           />
         </Item>
+        {isMultipleBase &&
+          <Item label={
+            <div className='select-table'>
+              {t('label.display.select.table')}
+            </div>
+          }>
+          <BaseSelector
+              baseToken={config.baseToken!}
+              onChange={(v) =>
+                setConfig({
+                  ...config,
+                  baseToken: v,
+                  table: null,
+                  view: null,
+                  titleRow: null,
+                  iconRow: null,
+                  linkRow: null,
+                })
+              }
+            />
+          </Item>
+        }
         <Item label={
           <div className='select-table'>
             {t('label.display.select.table')}
@@ -161,10 +254,15 @@ function ConfigPanel(props: {
             onChange={(e) => {
               setConfig({
                 ...config,
-                table: e
+                table: e,
+                view: null,
+                titleRow: null,
+                iconRow: null,
+                linkRow: null,
               })
             }}
             defaultSection={config.table}
+            bitable={bitable}
           />
         </Item>
         <Item label={
@@ -176,11 +274,15 @@ function ConfigPanel(props: {
             onChange={(e) => {
               setConfig({
                 ...config,
-                view: e
+                view: e,
+                titleRow: null,
+                iconRow: null,
+                linkRow: null,
               })
             }}
             defaultSection={config.view}
             tableId={config.table}
+            bitable={bitable}
           />
         </Item>
         <Item label={
@@ -199,6 +301,7 @@ function ConfigPanel(props: {
             tableId={config.table}
             viewId={config.view}
             availableFieldTypes={[FieldType.Text, FieldType.SingleSelect, FieldType.Formula]}
+            bitable={bitable}
           />
         </Item >
         <Item label={
@@ -217,6 +320,7 @@ function ConfigPanel(props: {
             tableId={config.table}
             viewId={config.view}
             availableFieldTypes={[FieldType.Text, FieldType.Url, FieldType.Attachment, FieldType.Formula]}
+            bitable={bitable}
           />
         </Item>
         <Item label={
@@ -235,6 +339,7 @@ function ConfigPanel(props: {
             tableId={config.table}
             viewId={config.view}
             availableFieldTypes={[FieldType.Text, FieldType.Url, FieldType.Attachment, FieldType.Formula]}
+            bitable={bitable}
           />
         </Item>
       </div>
