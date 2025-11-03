@@ -180,7 +180,12 @@ function ConfigPanel(props: {
   const onSaveConfig = () => {
     dashboard.saveConfig({
       customConfig: config,
-      dataConditions: [],
+      dataConditions: [
+         {
+          tableId: config.table,
+          baseToken: config.baseToken,
+        }
+      ],
     } as any)
   }
 
