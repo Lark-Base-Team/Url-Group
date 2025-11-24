@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { dashboard as dashboardSdk, bitable as bitableSdk, FieldType, IAttachmentField } from '@lark-base-open/js-sdk';
 import { toMinText, toNormalText } from "../../utils";
 import './row.scss'
-import { TFunction } from "i18next";
+import { t, TFunction } from "i18next";
+// @ts-ignore
+import NotFoundSVG from "../../assets/illustration_empty-neutral-no-access.svg";
+
 interface IUrlGroupConfig {
     type: 'grid' | 'row',
     table: string | null,
@@ -22,11 +25,14 @@ export function RowViewer(props: {
     trans: TFunction<"translation", undefined>,
     dashboard: typeof dashboardSdk,
     bitable: typeof bitableSdk | null,
+    isConfig: boolean,
 }) {
-    const { dashboard, bitable } = props;
+    const { dashboard, bitable, isConfig } = props;
 
     const [data, setData] = useState<IViewerData[]>([])
     const [light, setIsLight] = useState(true)
+    const [isTableNotFound, setIsTableNotFound] = useState(false);
+
     useEffect(() => {
         dashboard.getTheme().then((res) => {
             setIsLight(res.theme.toLocaleLowerCase() === 'light');
@@ -41,57 +47,62 @@ export function RowViewer(props: {
         if(props.config.table == null || bitable == null){
             return
         }
-        const table = await bitable.base.getTableById(props.config.table!)
-        const view = await table.getViewById(props.config.view!);
-        const recordIdList = await view.getVisibleRecordIdList();
-        for (const recordId of recordIdList) {
-            if(!recordId){
-                continue
-            }
-            const titleField = await table.getFieldById(props.config.titleRow!)
-            const titleCell = await titleField.getCell(recordId)
-            const title = await titleCell.getValue();
-            const iconField = await table.getFieldById(props.config.iconRow!)
-            const iconCell = await iconField.getCell(recordId)
-            const iconType = await iconField.getType()
-            let icon = [{text: ""}]
-            if (iconType == FieldType.Attachment){
-                try {
-                    const urls = await (iconField as IAttachmentField).getAttachmentUrls(recordId)
-                    icon = [{ text: urls[0]}]
-                } catch (e) {
-                    console.warn("Failed to fetch icon")
+        try {
+            const table = await bitable.base.getTableById(props.config.table!)
+            const view = await table.getViewById(props.config.view!);
+            const recordIdList = await view.getVisibleRecordIdList();
+            for (const recordId of recordIdList) {
+                if(!recordId){
+                    continue
                 }
-            }
-            else{
-                icon = await iconCell.getValue();
-            }
-            
-            if (!Array.isArray(icon) && !Array.isArray(title)){
-                continue
-            }
-            const linkField = await table.getFieldById(props.config.linkRow!)
-            const linkCell = await linkField.getCell(recordId)
-            const linkType = await linkField.getType()
-            let link = [{text: ""}]
-            if(linkType == FieldType.Attachment){
-                try {
-                    const urls = await (linkField as IAttachmentField).getAttachmentUrls(recordId)
-                    link = [{text: urls[0]}]
-                } catch (e) {
-                    console.warn("Failed to fetch link")
+                const titleField = await table.getFieldById(props.config.titleRow!)
+                const titleCell = await titleField.getCell(recordId)
+                const title = await titleCell.getValue();
+                const iconField = await table.getFieldById(props.config.iconRow!)
+                const iconCell = await iconField.getCell(recordId)
+                const iconType = await iconField.getType()
+                let icon = [{text: ""}]
+                if (iconType == FieldType.Attachment){
+                    try {
+                        const urls = await (iconField as IAttachmentField).getAttachmentUrls(recordId)
+                        icon = [{ text: urls[0]}]
+                    } catch (e) {
+                        console.warn("Failed to fetch icon")
+                    }
                 }
+                else{
+                    icon = await iconCell.getValue();
+                }
+                
+                if (!Array.isArray(icon) && !Array.isArray(title)){
+                    continue
+                }
+                const linkField = await table.getFieldById(props.config.linkRow!)
+                const linkCell = await linkField.getCell(recordId)
+                const linkType = await linkField.getType()
+                let link = [{text: ""}]
+                if(linkType == FieldType.Attachment){
+                    try {
+                        const urls = await (linkField as IAttachmentField).getAttachmentUrls(recordId)
+                        link = [{text: urls[0]}]
+                    } catch (e) {
+                        console.warn("Failed to fetch link")
+                    }
+                }
+                else{
+                    link = await linkCell.getValue();
+                }
+                data.push({
+                    text: toNormalText(title),
+                    icon: toNormalText(icon),
+                    link: toNormalText(link)
+                })
             }
-            else{
-                link = await linkCell.getValue();
-            }
-            data.push({
-                text: toNormalText(title),
-                icon: toNormalText(icon),
-                link: toNormalText(link)
-            })
+            setData(data)
+        } catch (e) {
+            console.log('====setIsTableNotFound', e)
+            setIsTableNotFound(true)
         }
-        setData(data)
     }
     useEffect(() => {
         fetchData();
@@ -223,6 +234,14 @@ export function RowViewer(props: {
         </div>
     );
 
+    if (!isConfig && isTableNotFound) {
+    return (
+      <div className={"empty"}>
+        <img className={"illustration"} src={NotFoundSVG} />
+        <div className={"text"}>{t("无权限查看组件")}</div>
+      </div>
+    );
+  }
     return (
         <List
             style={{ width: "100%" }}

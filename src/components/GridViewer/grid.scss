@@ -29,3 +29,17 @@ p {
 .semi-list-empty {
     grid-column: 1 / -1;
 }
+.empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+
+  .text {
+    color: var(--text-caption);
+    font-size: 14px;
+    line-height: 22px;
+  }
+}

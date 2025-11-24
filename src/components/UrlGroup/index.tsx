@@ -152,9 +152,9 @@ export default function UrlGroup(props: UrlGroupProps) {
       }}>
         {
           config.type == "row" ?
-            <RowViewer config={config} trans={t} dashboard={dashboard} bitable={bitable} />
+            <RowViewer config={config} trans={t} dashboard={dashboard} bitable={bitable} isConfig={isConfig} />
             :
-            <GridViewer config={config} trans={t} dashboard={dashboard} bitable={bitable} />
+            <GridViewer config={config} trans={t} dashboard={dashboard} bitable={bitable} isConfig={isConfig} />
         }
       </div>
       {
