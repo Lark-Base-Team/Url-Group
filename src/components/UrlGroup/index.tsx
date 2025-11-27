@@ -48,7 +48,7 @@ export default function UrlGroup(props: UrlGroupProps) {
   const [isMultipleBase, setIsMultipleBase] = useState<boolean | undefined>(
     undefined
   );
-  const [bitable, setBitable] = useState<typeof bitableSdk | null>(bitableSdk);
+  const [bitable, setBitable] = useState<typeof bitableSdk | null>(null);
   const [dashboard, setDashboard] = useState<IDashboard>(dashboardSdk);
 
   const isCreate = dashboard.state === DashboardState.Create
@@ -60,18 +60,18 @@ export default function UrlGroup(props: UrlGroupProps) {
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      if (!isMultipleBase) {
-        return;
-      }
-      const workspaceBitable = await workspace.getBitable(
-        config.baseToken!
-      );
-      const workspaceDashboard = workspaceBitable?.dashboard || dashboard;
-     setDashboard(workspaceDashboard);
-    })();
-  }, [config.baseToken, isMultipleBase]);
+  // useEffect(() => {
+  //   (async () => {
+  //     if (!isMultipleBase) {
+  //       return;
+  //     }
+  //     const workspaceBitable = await workspace.getBitable(
+  //       config.baseToken!
+  //     );
+  //     const workspaceDashboard = workspaceBitable?.dashboard || dashboard;
+  //    setDashboard(workspaceDashboard);
+  //   })();
+  // }, [config.baseToken, isMultipleBase]);
 
   const getBaseToken = async () => {
     if (config?.baseToken) {
@@ -111,14 +111,24 @@ export default function UrlGroup(props: UrlGroupProps) {
 
   useEffect(() => {
     (async () => {
-      if (isMultipleBase && !config.baseToken) {
-        setBitable(null);
+      // 未初始完env不处理
+      if(isMultipleBase === undefined) {
         return;
       }
-      const realBitable = isMultipleBase
-        ? await workspace.getBitable(config.baseToken!)
-        : bitableSdk;
+      // 仪表盘，或者应用预览模式使用导出的bitable
+      if (!isMultipleBase || bitableSdk.dashboard.state === DashboardState.View) {
+        setDashboard(bitableSdk.dashboard);
+        setBitable(bitableSdk);
+        return;
+      }
+      
+      if (isMultipleBase && !config.baseToken) {
+        return;
+      }
+      
+      const realBitable = await workspace.getBitable(config.baseToken!)
       setBitable(realBitable);
+      setDashboard(realBitable?.dashboard || bitableSdk?.dashboard);
     })();
   }, [config.baseToken, isMultipleBase]);
 

@@ -1,6 +1,6 @@
 import { Avatar, List, Space, Skeleton } from "@douyinfe/semi-ui";
 import { useEffect, useState } from "react";
-import { dashboard as dashboardSdk, bitable as bitableSdk, IAttachmentField, FieldType } from '@lark-base-open/js-sdk';
+import { dashboard as dashboardSdk, bitable as bitableSdk, IAttachmentField, FieldType, DashboardState } from '@lark-base-open/js-sdk';
 import { toMinText, toNormalText } from "../../utils";
 import './grid.scss'
 import { t, TFunction } from "i18next";
@@ -99,8 +99,9 @@ export function GridViewer(props: {
                 })
             }
             setData(data)
+            setIsTableNotFound(false)
         } catch(e) {
-            setIsTableNotFound(true)
+            dashboard.state === DashboardState.View && setIsTableNotFound(true)
         }
     }
 
